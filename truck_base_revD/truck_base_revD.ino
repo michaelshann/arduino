@@ -2,6 +2,7 @@
 #define DOWN_OUT 15
 #define TAILGATE_OUT 16 
 #define OTHER_OUT 17
+#define STATUS_LED 9
 
 #define UP_IN 4
 #define DOWN_IN 5
@@ -9,6 +10,9 @@
 
 #define TIME_TO_HOLD_DOWN 1500
 #define TAILGATE_HOLD_DOWN_TIME 5000
+
+#define LED_MAX  511 // max brightness of LED
+#define LED_STEP  5 // step in each step of fade for LED
 
 boolean up = false;
 boolean down = false;
@@ -25,6 +29,8 @@ byte tailgate_open = LOW;
 unsigned long held_down_time = 0;
 unsigned long last_time_check = 0;
 unsigned long right_now = 0;
+unsigned int led_brightness = 0; 
+unsigned int last_led_brightness = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -33,10 +39,14 @@ void setup() {
   pinMode(DOWN_OUT, OUTPUT);
   pinMode(TAILGATE_OUT, OUTPUT);
   pinMode(OTHER_OUT, OUTPUT);
+  pinMode(STATUS_LED, OUTPUT);
   
   pinMode(UP_IN, INPUT);
   pinMode(DOWN_IN, INPUT);
   pinMode(TAILGATE_IN, INPUT);
+
+  digitalWrite(STATUS_LED, HIGH);
+  led_brightness = LED_MAX;
   
   delay(1000);
 }
@@ -65,6 +75,16 @@ void loop() {
   digitalWrite(TAILGATE_OUT, tailgate_open); 
 //  digitalWrite(OTHER_OUT, (button_held_down > 0));
   
+  led_brightness = led_brightness + (LED_STEP * (up || hold_up)) - (LED_STEP * (down || hold_down));
+  
+  if(last_led_brightness == led_brightness || led_brightness > LED_MAX) {
+    led_brightness = LED_MAX;
+  }
+
+  analogWrite(STATUS_LED,led_brightness);
+
+
+  last_led_brightness = led_brightness;
   last_time_check = right_now;
   last_button_press = button_press;
   delay(10);
